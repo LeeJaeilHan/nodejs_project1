@@ -3,6 +3,7 @@ const fs = require('fs');
 const url = require('url');
 const qs = require('querystring');
 const path = require('path');
+var sanitizeHtml = require('sanitize-html');
 const template = require('./lib/template.js');
 
 const app = http.createServer(function(request,response){
@@ -33,19 +34,22 @@ const app = http.createServer(function(request,response){
         let filteredId = path.parse(queryData.id).base;
         fs.readFile(`data/${filteredId}`,'utf8',function(err,description){
           let title = filteredId;
+          let sanitizedTitle = sanitizeHtml(title);
           let list = template.List(filelist);
+          let sanitizedDescription = sanitizeHtml(description);
           let html = template.HTML(title,list,
             `
-            <h2>${title}</h2>
+            <h2>${sanitizedTitle}</h2>
             <a href="/create">create</a>
-            <a href="/update?id=${title}">update</a>
+            <a href="/update?id=${sanitizedTitle}">update</a>
             <form action="/delete_process" method="post">
-              <input type="hidden" name="id" value=${title}>
+              <input type="hidden" name="id" value=${sanitizedTitle}>
               <input type="submit" value="delete">
             </form>
-            <p>${description}</p>
+            <p>${sanitizedDescription}</p>
             `
           );
+
           response.writeHead(200);
           response.end(html);
         });
@@ -90,16 +94,18 @@ const app = http.createServer(function(request,response){
       const filteredId = path.parse(queryData.id).base;
       fs.readFile(`data/${filteredId}`,'utf8',function(err,description){
         let title = filteredId;
+        let sanitizedTitle = sanitizeHtml(title);
+        let sanitizedDescription = sanitizeHtml(description);
         let list = template.List(filelist);
         let html = template.HTML(title,list,
           `
-          <form action="/update_process?id=${title}" method="post">
-            <input type="hidden" name="id" value=${title}>
+          <form action="/update_process?id=${sanitizedTitle}" method="post">
+            <input type="hidden" name="id" value=${sanitizedTitle}>
             <p>
-              <input type="text" name="title" value=${title} placeholder="title">
+              <input type="text" name="title" value=${sanitizedTitle} placeholder="title">
             </p>
             <p>
-              <textarea name="description" placeholder="description">${description}</textarea>
+              <textarea name="description" placeholder="description">${sanitizedDescription}</textarea>
             </p>
             <input type="submit">
           </form>
