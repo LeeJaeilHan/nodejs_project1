@@ -1,5 +1,5 @@
 # nodejs_project1
-web application which has CRUD functions
+web application CRUD using file
 
 ## functions
 1. create
