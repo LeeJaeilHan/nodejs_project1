@@ -1,6 +1,7 @@
 const http = require('http');
 const fs = require('fs');
 const url = require('url');
+const qs = require('querystring');
 
 function templateHTML(title, list, body) {
   let template = `
@@ -45,6 +46,7 @@ var app = http.createServer(function(request,response){
         let template = templateHTML(title,list,
           `
           <h2>${title}</h2>
+          <a href="/create">create</a>
           <p>
           ${description}
           </p>
@@ -61,6 +63,7 @@ var app = http.createServer(function(request,response){
           let template = templateHTML(title,list,
             `
             <h2>${title}</h2>
+            <a href="/create">create</a>
             <p>${description}</p>
             `
           );
@@ -69,6 +72,40 @@ var app = http.createServer(function(request,response){
         });
       });
     }
+  } else if (pathname == '/create') {
+    fs.readdir('data', function(err,filelist){
+      let title = 'WEB-create';
+      let list = templateList(filelist);
+      let template = templateHTML(title,list,
+        `
+        <form action="/create_process" method="post">
+          <p>
+            <input type="text" name="title" placeholder="title">
+          </p>
+          <p>
+            <textarea name="description" placeholder="description"></textarea>
+          </p>
+          <input type="submit">
+        </form>
+        `
+      );
+      response.writeHead(200);
+      response.end(template);
+    });
+  } else if (pathname == '/create_process') {
+    let body = '';
+    request.on('data',function(data){
+      body = body + data;
+    });
+    request.on('end',function(){
+      let post = qs.parse(body);
+      let title = post.title;
+      let description = post.description;
+      fs.writeFile(`data/${title}`,description,function(err){
+        response.writeHead(301, {location:`/?id=${title}`});
+        response.end();
+      });
+    });
   } else {
     response.writeHead(404);
     response.end('Not Found');
