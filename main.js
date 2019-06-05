@@ -64,6 +64,7 @@ var app = http.createServer(function(request,response){
             `
             <h2>${title}</h2>
             <a href="/create">create</a>
+            <a href="/update?id=${title}">update</a>
             <p>${description}</p>
             `
           );
@@ -104,6 +105,46 @@ var app = http.createServer(function(request,response){
       fs.writeFile(`data/${title}`,description,function(err){
         response.writeHead(301, {location:`/?id=${title}`});
         response.end();
+      });
+    });
+  } else if (pathname == '/update') {
+    fs.readdir('./data', function(err,filelist){
+      fs.readFile(`data/${queryData.id}`,'utf8',function(err,description){
+        let title = queryData.id;
+        let list = templateList(filelist);
+        let template = templateHTML(title,list,
+          `
+          <form action="/update_process?id=${title}" method="post">
+            <input type="hidden" name="id" value=${title}>
+            <p>
+              <input type="text" name="title" value=${title} placeholder="title">
+            </p>
+            <p>
+              <textarea name="description" placeholder="description">${description}</textarea>
+            </p>
+            <input type="submit">
+          </form>
+          `
+        );
+        response.writeHead(200);
+        response.end(template);
+      });
+    });
+  } else if (pathname == '/update_process') {
+    let body = '';
+    request.on('data',function(data){
+      body = body + data;
+    });
+    request.on('end',function(){
+      let post = qs.parse(body);
+      let id = post.id;
+      let title = post.title;
+      let description = post.description;
+      fs.rename(`data/${id}`,`data/${title}`,function(err){
+        fs.writeFile(`data/${title}`,description,function(err){
+          response.writeHead(302, {location:`/?id=${title}`});
+          response.end();
+        });
       });
     });
   } else {
