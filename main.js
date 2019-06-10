@@ -9,6 +9,7 @@ const path = require('path');
 const sanitizeHtml = require('sanitize-html');
 
 //use middleware
+app.use(express.static('public'));
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(compression());
 app.get('*',function(request,response,next){
@@ -27,6 +28,7 @@ app.get('/',function(request,response){
     <h2>${title}</h2>
     <a href="/create">create</a>
     <p>${description}</p>
+    <img src="images/hello.jpg" style="width:300px; height: auto;">
     `
   );
   response.send(html);
