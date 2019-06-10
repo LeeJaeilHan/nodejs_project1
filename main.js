@@ -34,9 +34,10 @@ app.get('/',function(request,response){
   response.send(html);
 });
 
-app.get('/page/:pageid',function(request,response) {
+app.get('/page/:pageid',function(request,response,next) {
   let filteredId = request.params.pageid;
   fs.readFile(`data/${filteredId}`,'utf8',function(err,description){
+    if(err) next(err);
     let title = filteredId;
     let sanitizedTitle = sanitizeHtml(title);
     let list = template.List(request.list);
@@ -129,6 +130,16 @@ app.post('/delete_process',function(request,response){
   fs.unlink(`data/${filteredId}`, function(err){
     response.redirect('/');
   });
+});
+
+// middleware 순차 실행된다 -> 여기까지 오면 못찾은것
+app.use(function(req, res, next) {
+  res.status(404).send('Sorry cant find that!');
+});
+
+app.use(function(err, req, res, next) {
+  console.error(err.stack);
+  res.status(500).send('Something broke!');
 });
 
 app.listen(3000,function(){
