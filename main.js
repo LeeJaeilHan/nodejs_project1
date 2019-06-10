@@ -2,9 +2,12 @@ const express = require('express');
 const app = express();
 const fs = require('fs');
 const qs = require('querystring');
+const bodyParser = require('body-parser');
 const template = require('./lib/template.js');
 const path = require('path');
 const sanitizeHtml = require('sanitize-html');
+
+app.use(bodyParser.urlencoded({ extended: false }));
 
 app.get('/',function(request,response){
   fs.readdir('data', function(err,filelist){
@@ -71,18 +74,12 @@ app.get('/create',function(request,response){
 });
 
 app.post('/create_process',function(request,response){
-  let body = '';
-  request.on('data',function(data){
-    body = body + data;
-  });
-  request.on('end',function(){
-    let post = qs.parse(body);
-    let title = post.title;
-    let description = post.description;
-    fs.writeFile(`data/${title}`,description,function(err){
-      response.writeHead(301, {location:`/page/${title}`});
-      response.end();
-    });
+  let post = request.body;
+  let title = post.title;
+  let description = post.description;
+  fs.writeFile(`data/${title}`,description,function(err){
+    response.writeHead(301, {location:`/page/${title}`});
+    response.end();
   });
 });
 
@@ -114,35 +111,23 @@ app.get('/update/:updateid',function(request,response){
 });
 
 app.post('/update_process',function(request,response){
-  let body = '';
-  request.on('data',function(data){
-    body = body + data;
-  });
-  request.on('end',function(){
-    let post = qs.parse(body);
-    let id = post.id;
-    let title = post.title;
-    let description = post.description;
-    fs.rename(`data/${id}`,`data/${title}`,function(err){
-      fs.writeFile(`data/${title}`,description,function(err){
-        response.redirect(`/page/${title}`);
-      });
+  let post = request.body;
+  let id = post.id;
+  let title = post.title;
+  let description = post.description;
+  fs.rename(`data/${id}`,`data/${title}`,function(err){
+    fs.writeFile(`data/${title}`,description,function(err){
+      response.redirect(`/page/${title}`);
     });
   });
 });
 
 app.post('/delete_process',function(request,response){
-  let body = '';
-  request.on('data',function(data){
-    body = body + data;
-  });
-  request.on('end',function(){
-    let post = qs.parse(body);
-    let id = post.id;
-    let filteredId = path.parse(id).base;
-    fs.unlink(`data/${filteredId}`, function(err){
-      response.redirect('/');
-    });
+  let post = request.body;
+  let id = post.id;
+  let filteredId = path.parse(id).base;
+  fs.unlink(`data/${filteredId}`, function(err){
+    response.redirect('/');
   });
 });
 
