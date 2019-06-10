@@ -11,69 +11,67 @@ const sanitizeHtml = require('sanitize-html');
 //use middleware
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(compression());
-
-app.get('/',function(request,response){
+app.get('*',function(request,response,next){
   fs.readdir('data', function(err,filelist){
-    let title = 'Hello Server';
-    let description = "Server is ..."
-    let list = template.List(filelist);
-    let html = template.HTML(title,list,
-      `
-      <h2>${title}</h2>
-      <a href="/create">create</a>
-      <p>
-      ${description}
-      </p>
-      `
-    );
-    response.send(html);
+    request.list = filelist;
+    next();
   });
 });
 
+app.get('/',function(request,response){
+  let title = 'Hello Server';
+  let description = "use express"
+  let list = template.List(request.list);
+  let html = template.HTML(title,list,
+    `
+    <h2>${title}</h2>
+    <a href="/create">create</a>
+    <p>${description}</p>
+    `
+  );
+  response.send(html);
+});
+
 app.get('/page/:pageid',function(request,response) {
-  fs.readdir('./data', function(err,filelist){
-    let filteredId = request.params.pageid;
-    fs.readFile(`data/${filteredId}`,'utf8',function(err,description){
-      let title = filteredId;
-      let sanitizedTitle = sanitizeHtml(title);
-      let list = template.List(filelist);
-      let sanitizedDescription = sanitizeHtml(description);
-      let html = template.HTML(title,list,
-        `
-        <h2>${sanitizedTitle}</h2>
-        <a href="/create">create</a>
-        <a href="/update/${sanitizedTitle}">update</a>
-        <form action="/delete_process" method="post">
-          <input type="hidden" name="id" value=${sanitizedTitle}>
-          <input type="submit" value="delete">
-        </form>
-        <p>${sanitizedDescription}</p>
-        `
-      );
-      response.send(html);
-    });
+  let filteredId = request.params.pageid;
+  fs.readFile(`data/${filteredId}`,'utf8',function(err,description){
+    let title = filteredId;
+    let sanitizedTitle = sanitizeHtml(title);
+    let list = template.List(request.list);
+    let sanitizedDescription = sanitizeHtml(description);
+    let html = template.HTML(title,list,
+      `
+      <h2>${sanitizedTitle}</h2>
+      <a href="/create">create</a>
+      <a href="/update/${sanitizedTitle}">update</a>
+      <form action="/delete_process" method="post">
+        <input type="hidden" name="id" value=${sanitizedTitle}>
+        <input type="submit" value="delete">
+      </form>
+      <p>${sanitizedDescription}</p>
+      `
+    );
+    response.send(html);
   });
 })
 
 app.get('/create',function(request,response){
-  fs.readdir('data', function(err,filelist){
-    let title = 'WEB-create';
-    let list = template.List(filelist);
-    let html = template.HTML(title,list,
-      `
-      <form action="/create_process" method="post">
-        <p>
-          <input type="text" name="title" placeholder="title">
-        </p>
-        <p>
-          <textarea name="description" placeholder="description"></textarea>
-        </p>
-        <input type="submit">
-      </form>
-      `
-    );
-    response.send(html);
-  });
+  let title = 'WEB-create';
+  let list = template.List(request.list);
+  let html = template.HTML(title,list,
+    `
+    <form action="/create_process" method="post">
+      <p>
+        <input type="text" name="title" placeholder="title">
+      </p>
+      <p>
+        <textarea name="description" placeholder="description"></textarea>
+      </p>
+      <input type="submit">
+    </form>
+    `
+  );
+  response.send(html);
 });
 
 app.post('/create_process',function(request,response){
@@ -81,35 +79,32 @@ app.post('/create_process',function(request,response){
   let title = post.title;
   let description = post.description;
   fs.writeFile(`data/${title}`,description,function(err){
-    response.writeHead(301, {location:`/page/${title}`});
-    response.end();
+    response.redirect(`/page/${title}`);
   });
 });
 
 app.get('/update/:updateid',function(request,response){
-  fs.readdir('./data', function(err,filelist){
-    const filteredId = path.parse(request.params.updateid).base;
-    fs.readFile(`data/${filteredId}`,'utf8',function(err,description){
-      let title = filteredId;
-      let sanitizedTitle = sanitizeHtml(title);
-      let sanitizedDescription = sanitizeHtml(description);
-      let list = template.List(filelist);
-      let html = template.HTML(title,list,
-        `
-        <form action="/update_process?id=${sanitizedTitle}" method="post">
-          <input type="hidden" name="id" value=${sanitizedTitle}>
-          <p>
-            <input type="text" name="title" value=${sanitizedTitle} placeholder="title">
-          </p>
-          <p>
-            <textarea name="description" placeholder="description">${sanitizedDescription}</textarea>
-          </p>
-          <input type="submit">
-        </form>
-        `
-      );
-      response.send(html);
-    });
+  const filteredId = path.parse(request.params.updateid).base;
+  fs.readFile(`data/${filteredId}`,'utf8',function(err,description){
+    let title = filteredId;
+    let sanitizedTitle = sanitizeHtml(title);
+    let sanitizedDescription = sanitizeHtml(description);
+    let list = template.List(request.list);
+    let html = template.HTML(title,list,
+      `
+      <form action="/update_process?id=${sanitizedTitle}" method="post">
+        <input type="hidden" name="id" value=${sanitizedTitle}>
+        <p>
+          <input type="text" name="title" value=${sanitizedTitle} placeholder="title">
+        </p>
+        <p>
+          <textarea name="description" placeholder="description">${sanitizedDescription}</textarea>
+        </p>
+        <input type="submit">
+      </form>
+      `
+    );
+    response.send(html);
   });
 });
 
