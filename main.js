@@ -3,11 +3,14 @@ const app = express();
 const fs = require('fs');
 const qs = require('querystring');
 const bodyParser = require('body-parser');
+const compression = require('compression');
 const template = require('./lib/template.js');
 const path = require('path');
 const sanitizeHtml = require('sanitize-html');
 
+//use middleware
 app.use(bodyParser.urlencoded({ extended: false }));
+app.use(compression());
 
 app.get('/',function(request,response){
   fs.readdir('data', function(err,filelist){
